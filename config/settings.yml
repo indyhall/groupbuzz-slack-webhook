@@ -1,5 +1,6 @@
 slack_host: https://creativetimemgmt.slack.com/
 slack_channel: '#general'
+# note: slack app name is not overridable if using incoming web hook (see https://api.slack.com/incoming-webhooks)
 slack_username: 'GroupBuzz'
 slack_webhook: https://hooks.slack.com/services/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 
 message_subject_prefix: '[indyhall]'

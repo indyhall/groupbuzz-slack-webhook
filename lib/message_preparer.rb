@@ -17,20 +17,23 @@ module GroupBuzz
 
       topic_preamble_index, groupbuzz_link = prepare_groupbuzz_link(raw_email_body)
       raw_email_body = raw_email_body[0, topic_preamble_index] if groupbuzz_link
-      subject = prepare_subject(posted_message['subject'], posted_message['sender_name'], groupbuzz_link)
+      sender_name = prepare_sender_name(posted_message['sender_name'])
+      subject = prepare_subject(posted_message['subject'], sender_name, groupbuzz_link)
       
       body_text = prepare_body_text(raw_email_body)
 
-      message_hash(subject, body_text)
+      message_hash(sender_name, subject, body_text)
     end
   
     private
 
-    def message_hash(subject, body_text)
+    def message_hash(sender_name, subject, body_text)
+      # Note: top-level 'text' displays the same as attachments[0].pretext (outside the attachment, same font size)
       {
-        text: subject,
         attachments: [
           {
+            pretext: subject,
+            author_name: sender_name,
             text: body_text
           }
         ]
@@ -43,20 +46,33 @@ module GroupBuzz
       remove_embed_removed_marker(text)
     end
 
-    def prepare_subject(text, groupbuzz_sender, groupbuzz_link)
-      sender = groupbuzz_sender.delete('"').gsub(GROUPBUZZ_SENDER_VIA_SUFFIX, '')
+    def prepare_sender_name(sender_name)
+      sender_name.delete('"').gsub(GROUPBUZZ_SENDER_VIA_SUFFIX, '')
+    end
+
+    def prepare_subject(text, sender, groupbuzz_link)
+#      sender_prefix = "#{sender} - "
+      sender_prefix = "" # move to attachments
       subject = text.gsub(@message_subject_prefix, '')
       return groupbuzz_link ?
-        "#{sender} - <#{groupbuzz_link}|#{subject}>" :
-        "#{sender} - #{subject}"  
+        "#{sender_prefix}<#{groupbuzz_link}|#{subject}>" :
+        "#{sender_prefix}#{subject}"  
     end
 
     def prepare_body_text(text)
+      # Stripping all new lines because we don't care about it (line formatting) for a preview/snippet.
       body_text = strip_new_lines(text)
+
+      # Remove all embedded images and the header (reply to)/footer(thread)
       body_text = strip_groupbuzz_stuff(body_text)
+
       body_text = Slack::Notifier::Util::LinkFormatter.format(body_text)
-      # TODO - format bold, italic if possible
+
+      body_text = convert_to_markdown_bold(body_text)
+
       body_text = truncate_text(body_text, @truncate_length)
+
+      puts "GroupBuzz::SlackMessagePreparer.prepare_body_text(), body_text\n #{body_text}\n"
       "#{body_text}..."
     end
 
@@ -78,6 +94,16 @@ module GroupBuzz
     # See https://stackoverflow.com/questions/8714045/truncate-a-string-without-cut-in-the-middle-of-a-word-in-rails
     def truncate_text(text, length)
       text.match(/^.{0,#{length}}\b/)[0]
+    end
+
+    # Hacked together convert **<words/spaces>** to *<word(s)/space(s)>
+    # Regexp from https://gist.github.com/jbroadway/2836900
+    # Method scaffold from https://github.com/aziflaj/md2html/blob/master/md2html.rb
+    def convert_to_markdown_bold(text)
+      match_count = 0
+      text.gsub(/(\*\*|__)(.*?)\1/) do |strong|
+        strong.gsub('**', '*')
+      end
     end
 
     # I did not write the original method!
