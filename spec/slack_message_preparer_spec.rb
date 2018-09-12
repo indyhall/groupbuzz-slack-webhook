@@ -1,7 +1,8 @@
 require 'spec_helper'
 
 describe GroupBuzz::SlackMessagePreparer do
-    
+
+  DEFAULT_MESSAGE_SUBJECT_PREFIX = '[indyhall]' 
   DEFAULT_SUBJECT = 'This is a subject'
   DEFAULT_SENDER_NAME = "\"Jane Doe\" via GroupBuzz"
   DEFAULT_EMAIL_BODY = 'This is the email body.'
@@ -216,6 +217,7 @@ describe GroupBuzz::SlackMessagePreparer do
     strip_new_lines: strip_new_lines,
     truncate_length: truncate_length,
     truncate_lines: truncate_lines)
+    ENV['GROUPBUZZ_RELAY_SLACK_MESSAGE_SUBJECT_PREFIX'] = DEFAULT_MESSAGE_SUBJECT_PREFIX
     message_preparer = GroupBuzz::SlackMessagePreparer.new
 
     message_preparer.original_message_debug_logging = false

@@ -16,9 +16,11 @@ module GroupBuzz
     attr_accessor :original_message_debug_logging
 
     def initialize
+      raise "Error! GROUPBUZZ_RELAY_SLACK_MESSAGE_SUBJECT_PREFIX not set as environment variable!" unless ENV['GROUPBUZZ_RELAY_SLACK_MESSAGE_SUBJECT_PREFIX']
+      @message_subject_prefix = ENV['GROUPBUZZ_RELAY_SLACK_MESSAGE_SUBJECT_PREFIX']
+
       @truncate_length = GroupBuzz::SettingsHolder.settings[:message_truncate_length]
       @truncate_lines = GroupBuzz::SettingsHolder.settings[:message_truncate_lines]
-      @message_subject_prefix = GroupBuzz::SettingsHolder.settings[:message_subject_prefix]
       @strip_new_lines = GroupBuzz::SettingsHolder.settings[:message_strip_new_lines]
       @original_message_debug_logging = GroupBuzz::SettingsHolder.settings[:original_message_debug_logging]
     end

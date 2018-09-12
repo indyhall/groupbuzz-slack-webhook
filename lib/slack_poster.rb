@@ -16,9 +16,13 @@ module GroupBuzz
     private
 
     def slack_notifier
-      @slack_notifier ||= Slack::Notifier.new @slack_webhook do
-        defaults channel: @slack_channel,
-                 username: @slack_username
+      raise "Error! GROUPBUZZ_RELAY_SLACK_WEBHOOK not set as environment variable!" unless ENV['GROUPBUZZ_RELAY_SLACK_WEBHOOK']
+      raise "Error! GROUPBUZZ_RELAY_SLACK_CHANNEL not set as environment variable!" unless ENV['GROUPBUZZ_RELAY_SLACK_CHANNEL']
+      raise "Error! GROUPBUZZ_RELAY_SLACK_USERNAME not set as environment variable!" unless ENV['GROUPBUZZ_RELAY_SLACK_USERNAME']
+
+      @slack_notifier ||= Slack::Notifier.new ENV['GROUPBUZZ_RELAY_SLACK_WEBHOOK'] do
+        defaults channel: ENV['GROUPBUZZ_RELAY_SLACK_CHANNEL'],
+                 username: ENV['GROUPBUZZ_RELAY_SLACK_USERNAME']
       end
     end
 
