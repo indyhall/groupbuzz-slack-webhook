@@ -217,6 +217,8 @@ describe GroupBuzz::SlackMessagePreparer do
     truncate_length: truncate_length,
     truncate_lines: truncate_lines)
     message_preparer = GroupBuzz::SlackMessagePreparer.new
+
+    message_preparer.original_message_debug_logging = false
     message_preparer.strip_new_lines = strip_new_lines
     message_preparer.truncate_length = truncate_length
     message_preparer.truncate_lines = truncate_lines

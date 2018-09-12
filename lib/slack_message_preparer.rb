@@ -13,6 +13,7 @@ module GroupBuzz
     attr_accessor :strip_new_lines
     attr_accessor :truncate_length
     attr_accessor :truncate_lines
+    attr_accessor :original_message_debug_logging
 
     def initialize
       @truncate_length = GroupBuzz::SettingsHolder.settings[:message_truncate_length]

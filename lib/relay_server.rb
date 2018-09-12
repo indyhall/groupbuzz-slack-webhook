@@ -2,7 +2,6 @@ require 'bundler' ; Bundler.require
 require 'json'
 require "sinatra/base"
 require 'slack-notifier'
-require 'pry'
 require 'facets/hash/symbolize_keys'
 require 'facets/yaml'
 
