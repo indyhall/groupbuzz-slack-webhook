@@ -19,9 +19,15 @@ module GroupBuzz
       @truncate_lines = GroupBuzz::SettingsHolder.settings[:message_truncate_lines]
       @message_subject_prefix = GroupBuzz::SettingsHolder.settings[:message_subject_prefix]
       @strip_new_lines = GroupBuzz::SettingsHolder.settings[:message_strip_new_lines]
+      @original_message_debug_logging = GroupBuzz::SettingsHolder.settings[:original_message_debug_logging]
     end
 
     def prepare(posted_message)
+      if @original_message_debug_logging
+        puts "#{Time.now} - GroupBuzz::SlackMessagePreparer.prepare()"
+        puts "#{Time.now} - posted_message:\n#{posted_message}"
+      end
+
       raw_email_body = posted_message['email_body']
       raw_subject = posted_message['subject']
 

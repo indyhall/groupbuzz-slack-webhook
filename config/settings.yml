@@ -8,6 +8,7 @@ message_subject_prefix: '[indyhall]'
 message_truncate_length: 239
 message_truncate_lines: 3 
 message_strip_new_lines: false
+original_message_debug_logging: true
 # 30 characters/line (mobile)
 # 80 characters/line (desktop). Note Slack recommends 75 characters/line for no word-wrapping
 # lcm 30, 80 is 240
