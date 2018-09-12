@@ -1,12 +1,13 @@
 slack_host: https://creativetimemgmt.slack.com/
 slack_channel: '#general'
-# note: slack app name is not overridable if using incoming web hook (see https://api.slack.com/incoming-webhooks)
+# note: slack user name is not overridable if using incoming web hook (see https://api.slack.com/incoming-webhooks)
 slack_username: 'GroupBuzz'
 slack_webhook: https://hooks.slack.com/services/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 
 message_subject_prefix: '[indyhall]'
 #message_truncate_length: 2000 # no truncate
-message_truncate_length: 236 
+message_truncate_length: 249 
+message_strip_new_lines: false
 # 30 characters/line (mobile)
 # 80 characters/line (desktop). Note Slack recommends 75 characters/line for no word-wrapping
 # lcm 30, 80 is 240
-# leave 4 characters for '... '
+# Leave 1 character for …

@@ -1,5 +1,3 @@
-# TODO
-# Need unit tests
 module GroupBuzz
   class SlackMessagePreparer
 
@@ -9,9 +7,13 @@ module GroupBuzz
     GROUPBUZZ_SENDER_VIA_SUFFIX = " via GroupBuzz"
     MARKER_EMBED_REMOVED = "!EMBED_REMOVED!"
 
+    attr_accessor :strip_new_lines
+    attr_accessor :truncate_length
+
     def initialize
       @truncate_length = GroupBuzz::SettingsHolder.settings[:message_truncate_length]
       @message_subject_prefix = GroupBuzz::SettingsHolder.settings[:message_subject_prefix]
+      @strip_new_lines = GroupBuzz::SettingsHolder.settings[:message_strip_new_lines]
     end
 
     def prepare(posted_message)
@@ -45,7 +47,7 @@ module GroupBuzz
     def strip_groupbuzz_stuff(text)
       text = text.gsub(GROUPBUZZ_REPLY_HEADER_LINE, "")
       text = remove_embedded_images(text)
-      remove_embed_removed_marker(text)
+      #remove_embed_removed_marker(text)
     end
 
     def prepare_sender_name(sender_name)
@@ -62,8 +64,10 @@ module GroupBuzz
     end
 
     def prepare_body_text(text)
-      # Stripping all new lines because we don't care about it (line formatting) for a preview/snippet.
-      body_text = strip_new_lines(text)
+      # If enabled, stripping all new lines because we don't care about it (line formatting) for a preview/snippet.
+      body_text = @strip_new_lines ?
+        strip_new_lines(text) :
+        text
 
       # Remove all embedded images and the header (reply to)/footer(thread)
       body_text = strip_groupbuzz_stuff(body_text)
@@ -72,11 +76,11 @@ module GroupBuzz
 
       body_text = convert_to_markdown_bold(body_text)
 
+      pre_truncate_length = body_text.length
       body_text = truncate_text(body_text, @truncate_length)
 
-      # TODO - Remove this debug statement
-      puts "GroupBuzz::SlackMessagePreparer.prepare_body_text(), body_text\n #{body_text}\n"
-      "#{body_text}..."
+      return pre_truncate_length >= @truncate_length ?
+       "#{body_text}…" : body_text
     end
 
     def prepare_groupbuzz_link(text)
@@ -88,15 +92,15 @@ module GroupBuzz
     end
 
     # See https://stackoverflow.com/questions/9107658/regex-to-strip-r-and-n-or-r-n
-    # Working around issue of double replacement after the first gsub by 
-    # replacing the double replacement with what we really want and then doing one more pass
+    # and https://stackoverflow.com/questions/26767949/regular-expression-where-pattern-is-repeated-ruby-on-rails
     def strip_new_lines(text)
-      text.gsub(/\r?\n/, '<line-break>').gsub(/<line-break><line-break>/, ' ').gsub(/<line-break>/, ' ')
+      text.gsub(/(\r?\n)+/, ' ')
     end
 
     # See https://stackoverflow.com/questions/8714045/truncate-a-string-without-cut-in-the-middle-of-a-word-in-rails
-    def truncate_text(text, length)
-      text.match(/^.{0,#{length}}\b/)[0]
+    def truncate_text(text, max_length)
+      return text if text.length <= max_length
+      text.match(/^.{0,#{max_length}}\b/)[0]
     end
 
     # Hacked together convert **<words/spaces>** to *<word(s)/space(s)>
@@ -126,10 +130,11 @@ module GroupBuzz
             [^)]+  # One or more characters other than close parenthesis
           )        # Stop capturing
         \)         # Literal closing parenthesis
-      }x, MARKER_EMBED_REMOVED
+      }x, ''
     end
 
     # Since the hacked-up remove_embedded_images leaves undesired spaces before and after, remove those spaces here
+    # TODO - might not need this anymore?
     def remove_embed_removed_marker(text)
       text.gsub(" #{MARKER_EMBED_REMOVED}  ", '')
     end
