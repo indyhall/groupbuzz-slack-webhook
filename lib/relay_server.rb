@@ -4,6 +4,7 @@ require "sinatra/base"
 require 'slack-notifier'
 require 'facets/hash/symbolize_keys'
 require 'facets/yaml'
+require_relative 'settings_holder.rb'
 
 class RelayServer < Sinatra::Base
 
