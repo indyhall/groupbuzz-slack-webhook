@@ -10,8 +10,8 @@ module GroupBuzz
     end
 
     def post(message_post)
-      message = GroupBuzz::SlackMessagePreparer.new.prepare(message_post)
-      slack_notifier.ping message
+      postable, message = GroupBuzz::SlackMessagePreparer.new.prepare(message_post)
+      slack_notifier.ping message if postable
     end
     
     private

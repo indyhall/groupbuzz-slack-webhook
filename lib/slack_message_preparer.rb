@@ -6,12 +6,15 @@ module GroupBuzz
     GROUPBUZZ_SUBSCRIBE_URL_PART = "subscribe"
     GROUPBUZZ_SENDER_VIA_SUFFIX = " via GroupBuzz"
     MARKER_EMBED_REMOVED = "!EMBED_REMOVED!"
+    LINE_BREAK_SEGMENT = "\r\n"
 
     attr_accessor :strip_new_lines
     attr_accessor :truncate_length
+    attr_accessor :truncate_lines
 
     def initialize
       @truncate_length = GroupBuzz::SettingsHolder.settings[:message_truncate_length]
+      @truncate_lines = GroupBuzz::SettingsHolder.settings[:message_truncate_lines]
       @message_subject_prefix = GroupBuzz::SettingsHolder.settings[:message_subject_prefix]
       @strip_new_lines = GroupBuzz::SettingsHolder.settings[:message_strip_new_lines]
     end
@@ -26,7 +29,7 @@ module GroupBuzz
       
       body_text = prepare_body_text(raw_email_body)
 
-      message_hash(sender_name, subject, body_text)
+      return true, message_hash(sender_name, subject, body_text)
     end
   
     private
@@ -77,7 +80,7 @@ module GroupBuzz
       body_text = convert_to_markdown_bold(body_text)
 
       pre_truncate_length = body_text.length
-      body_text = truncate_text(body_text, @truncate_length)
+      body_text = truncate_text(body_text, @truncate_lines, @truncate_length)
 
       return pre_truncate_length >= @truncate_length ?
        "#{body_text}…" : body_text
@@ -97,10 +100,37 @@ module GroupBuzz
       text.gsub(/(\r?\n)+/, ' ')
     end
 
-    # See https://stackoverflow.com/questions/8714045/truncate-a-string-without-cut-in-the-middle-of-a-word-in-rails
-    def truncate_text(text, max_length)
-      return text if text.length <= max_length
-      text.match(/^.{0,#{max_length}}\b/)[0]
+    def truncate_text(text, max_distinct_lines, max_text_length)
+      by_lines_truncated_length, by_lines_truncated = truncate_text_distinct_lines(text, max_distinct_lines)
+
+      return by_lines_truncated if by_lines_truncated_length <= max_text_length
+
+      return text if text.length <= max_text_length
+
+      # See https://stackoverflow.com/questions/8714045/truncate-a-string-without-cut-in-the-middle-of-a-word-in-rails
+      text.match(/^.{0,#{max_text_length}}\b/)[0]
+    end
+
+    # This method cannot currently distinguish between a single line break and more than one line break (blank lines)
+    def truncate_text_distinct_lines(text, max_distinct_lines)
+      text_segments_truncated = []
+      count_line_breaks = 0
+
+      text_segments = text.split(/(\r?\n)+/)
+
+      text_segments.each_with_index do |text_segment, index|
+        if (text_segment == LINE_BREAK_SEGMENT)
+          count_line_breaks += 1
+        end
+        if count_line_breaks == max_distinct_lines
+          break
+        end
+        text_segments_truncated << text_segment
+      end
+
+      text_only_segments = text_segments_truncated.reject{|segment| segment == LINE_BREAK_SEGMENT}
+      text_only_segments_length = text_only_segments.inject(0){|sum, segment| sum + segment.length }
+      return text_only_segments_length, text_segments_truncated.join('')
     end
 
     # Hacked together convert **<words/spaces>** to *<word(s)/space(s)>
@@ -134,7 +164,7 @@ module GroupBuzz
     end
 
     # Since the hacked-up remove_embedded_images leaves undesired spaces before and after, remove those spaces here
-    # TODO - might not need this anymore?
+    # TODO - 20180911 might not need this anymore?
     def remove_embed_removed_marker(text)
       text.gsub(" #{MARKER_EMBED_REMOVED}  ", '')
     end
