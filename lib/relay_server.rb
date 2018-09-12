@@ -1,15 +1,17 @@
 require 'bundler' ; Bundler.require
 require 'json'
 require "sinatra/base"
-require "sinatra/config_file"
 require 'slack-notifier'
 require 'pry'
+require 'facets/hash/symbolize_keys'
+require 'facets/yaml'
 
 class RelayServer < Sinatra::Base
-  register Sinatra::ConfigFile
 
-  # TODO move config file to something that is initialized from YAML at startup
-  config_file '../config/settings.yml'  
+  configure do
+    GroupBuzz::SettingsHolder.settings = YAML::load_file(File.join(__dir__, '../config/settings.yml')).symbolize_keys.clone
+  end
+
 
   get '/hello-world' do
     "Hello World!"
@@ -30,9 +32,7 @@ class RelayServer < Sinatra::Base
   end
 
   def slack_poster
-    @slack_poster ||= GroupBuzz::SlackPoster.new(slack_webhook: settings.slack_webhook, slack_channel: settings.slack_channel, 
-      slack_username: settings.slack_username, message_truncate_length: settings.message_truncate_length,
-      message_subject_prefix: settings.message_subject_prefix)
+    @slack_poster ||= GroupBuzz::SlackPoster.new
   end
 
 end

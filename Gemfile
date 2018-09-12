@@ -2,8 +2,8 @@ source "http://rubygems.org"
 
 gem 'rake'
 gem 'sinatra', require: 'sinatra'
-gem 'sinatra-contrib'
 gem 'slack-notifier'
+gem 'facets'
 
 group :test do
   gem 'pry'

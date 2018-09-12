@@ -1,3 +1,5 @@
+# TODO
+# Need unit tests
 module GroupBuzz
   class SlackMessagePreparer
 
@@ -7,9 +9,9 @@ module GroupBuzz
     GROUPBUZZ_SENDER_VIA_SUFFIX = " via GroupBuzz"
     MARKER_EMBED_REMOVED = "!EMBED_REMOVED!"
 
-    def initialize(truncate_length, message_subject_prefix)
-      @truncate_length = truncate_length
-      @message_subject_prefix = message_subject_prefix
+    def initialize
+      @truncate_length = GroupBuzz::SettingsHolder.settings[:message_truncate_length]
+      @message_subject_prefix = GroupBuzz::SettingsHolder.settings[:message_subject_prefix]
     end
 
     def prepare(posted_message)
@@ -72,6 +74,7 @@ module GroupBuzz
 
       body_text = truncate_text(body_text, @truncate_length)
 
+      # TODO - Remove this debug statement
       puts "GroupBuzz::SlackMessagePreparer.prepare_body_text(), body_text\n #{body_text}\n"
       "#{body_text}..."
     end
