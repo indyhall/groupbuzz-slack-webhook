@@ -19,8 +19,8 @@ class RelayServer < Sinatra::Base
 
   post '/post-to-slack' do
     message_post = JSON.parse(request.body.read)
-    slack_poster.post(message_post)
-    {'sent_status' => 'ok'}.to_json
+    posted = slack_poster.post(message_post)
+    {'sent_status' => posted}.to_json
   end
 
   post '/slack-conversion-tester' do

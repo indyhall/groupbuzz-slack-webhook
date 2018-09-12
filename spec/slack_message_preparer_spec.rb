@@ -5,6 +5,7 @@ describe GroupBuzz::SlackMessagePreparer do
   DEFAULT_SUBJECT = 'This is a subject'
   DEFAULT_SENDER_NAME = "\"Jane Doe\" via GroupBuzz"
   DEFAULT_EMAIL_BODY = 'This is the email body.'
+  DEFAULT_STRIP_NEW_LINES = false
   DEFAULT_TRUNCATE_LENGTH = 249
   DEFAULT_TRUNCATE_LINES = 3
 
@@ -62,13 +63,55 @@ describe GroupBuzz::SlackMessagePreparer do
 
   end
 
-  context "subject" do
+  context "sender" do
+
+    it "should extract the sender if GB formatted" do
+      check_email_author_name(prepare_with_email_body(email_sender_name: "\"Jane Doe\" via GroupBuzz"),
+        "Jane Doe")
+    end
+
+    it "should use a plain sender if there was no GB formatted sender name" do
+      original_sender_name = "Plain Jane Doe"
+      check_email_author_name(prepare_with_email_body(email_sender_name: original_sender_name),
+        original_sender_name)
+    end
+
   end
 
-  context "GB footer removal with link extraction" do
+  context "subject" do
+
+    it 'should extract the GB topic link from the email body footer' do
+      topic_link = "http://indyhall.groupbuzz.io/topics/16997-next-week-is-member-photo-week/"
+      topic_subscribe_link = "#{topic_link}subscribe"
+      original_body = "\r\n\r\n\r\n#{GroupBuzz::SlackMessagePreparer::GROUPBUZZ_TOPIC_PREAMBLE}#{topic_subscribe_link}"
+      original_subject = "This is a new subject"
+      check_email_pretext(prepare_with_email_body(email_body: original_body, email_subject: original_subject),
+        "<#{topic_link.gsub('http','https')}|#{original_subject}>")
+    end
+
+    it 'should use a plain subject if there was no proper GB email body footer' do
+      original_body = "\r\n\r\n\r\nThis is a sentence."
+      original_subject = "This is a new subject"
+      check_email_pretext(prepare_with_email_body(email_body: original_body, email_subject: original_subject),
+        original_subject)
+    end
+
   end
 
   context "Disregard digest emails" do
+
+    it 'should reject digest-type emails based on subject' do
+      original_subject = "#{GroupBuzz::SettingsHolder.settings[:message_subject_prefix]} This is a subject that has the magic reject phrase #{GroupBuzz::SlackMessagePreparer::GROUPBUZZ_DISCUSSION_FROM_SUBJECT}"
+      posted, message = prepare_with_email_body_direct(email_subject: original_subject)
+      expect(posted).to be_false
+    end
+
+    it 'should reject digest-type emails on email body' do
+      original_body = "This is content that has the magic reject phrase #{GroupBuzz::SlackMessagePreparer::GROUPBUZZ_RECENT_DISCUSSIONS_HEADER}"
+      posted, message = prepare_with_email_body_direct(email_body: original_body)
+      expect(posted).to be_false
+    end
+
   end
 
   # Distinct lines are any lines with one or more line breaks (\r\n)
@@ -94,29 +137,54 @@ describe GroupBuzz::SlackMessagePreparer do
 
   end
 
-  def prepare_with_email_body(email_body: email_body, 
+  def prepare_with_email_body(
+    email_body: email_body = DEFAULT_EMAIL_BODY, 
+    email_subject: email_subject = DEFAULT_SUBJECT,
+    email_sender_name: email_sender_name = DEFAULT_SENDER_NAME,
     strip_new_lines: strip_new_lines = false,
     truncate_lines: truncate_lines = DEFAULT_TRUNCATE_LINES,
     truncate_length: truncate_length = DEFAULT_TRUNCATE_LENGTH)
-    postable, slack_message = prepare_with_email_body_direct(email_body, strip_new_lines, truncate_lines, truncate_length)
+    
+    postable, slack_message = prepare_with_email_body_direct(
+      email_body: email_body, email_subject: email_subject, email_sender_name: email_sender_name,
+      strip_new_lines: strip_new_lines, truncate_lines: truncate_lines, truncate_length: truncate_length)
     slack_message
   end
 
-  def prepare_with_email_body_direct(email_body, strip_new_lines, truncate_lines, truncate_length)
+  def prepare_with_email_body_direct(
+    email_subject: email_subject = DEFAULT_SUBJECT,
+    email_body: email_body = DEFAULT_EMAIL_BODY, 
+    email_sender_name: email_sender_name = DEFAULT_SENDER_NAME,
+    strip_new_lines: strip_new_lines = DEFAULT_STRIP_NEW_LINES, 
+    truncate_lines: truncate_lines = DEFAULT_TRUNCATE_LINES, 
+    truncate_length: truncate_length = DEFAULT_TRUNCATE_LENGTH)
+
     message_preparer(strip_new_lines: strip_new_lines, truncate_length: truncate_length, truncate_lines: truncate_lines)
-      .prepare(test_message(email_body: email_body))
+      .prepare(test_message(email_subject: email_subject, email_body: email_body, email_sender_name: email_sender_name))
+  end
+
+  def check_email_author_name(slack_message, expected)
+    check_email_contents(slack_message, :author_name, expected)
+  end
+
+  def check_email_pretext(slack_message, expected)
+    check_email_contents(slack_message, :pretext, expected)
   end
 
   def check_email_body(slack_message, expected)
-    expect(slack_message[:attachments].first[:text]).to eq(expected)
+    check_email_contents(slack_message, :text, expected)
+  end
+
+  def check_email_contents(slack_message, key, expected)
+    expect(slack_message[:attachments].first[key]).to eq(expected)
   end
 
   def test_message(email_body: email_body = DEFAULT_EMAIL_BODY,
-    sender_name: sender_name = DEFAULT_SENDER_NAME,
-    subject: subject = DEFAULT_SUBJECT)
+    email_sender_name: email_sender_name = DEFAULT_SENDER_NAME,
+    email_subject: subject)
     {'email_body' => email_body,
-     'sender_name' => sender_name,
-     'subject' => subject
+     'sender_name' => email_sender_name,
+     'subject' => email_subject
     }
   end
 

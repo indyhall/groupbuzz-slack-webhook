@@ -12,6 +12,7 @@ module GroupBuzz
     def post(message_post)
       postable, message = GroupBuzz::SlackMessagePreparer.new.prepare(message_post)
       slack_notifier.ping message if postable
+      return postable
     end
     
     private

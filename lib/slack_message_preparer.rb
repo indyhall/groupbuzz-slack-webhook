@@ -1,6 +1,8 @@
 module GroupBuzz
   class SlackMessagePreparer
 
+    GROUPBUZZ_DISCUSSION_FROM_SUBJECT = "Discussion from"
+    GROUPBUZZ_RECENT_DISCUSSIONS_HEADER = "Recent Discussions"
     GROUPBUZZ_REPLY_HEADER_LINE = "Please REPLY ABOVE THIS LINE to respond by email."
     GROUPBUZZ_TOPIC_PREAMBLE = "Follow this topic if you would like to be notified of new posts in this discussion: "
     GROUPBUZZ_SUBSCRIBE_URL_PART = "subscribe"
@@ -21,11 +23,14 @@ module GroupBuzz
 
     def prepare(posted_message)
       raw_email_body = posted_message['email_body']
+      raw_subject = posted_message['subject']
+
+      return false, {} if is_digest_email?(raw_email_body, raw_subject)
 
       topic_preamble_index, groupbuzz_link = prepare_groupbuzz_link(raw_email_body)
       raw_email_body = raw_email_body[0, topic_preamble_index] if groupbuzz_link
       sender_name = prepare_sender_name(posted_message['sender_name'])
-      subject = prepare_subject(posted_message['subject'], sender_name, groupbuzz_link)
+      subject = prepare_subject(raw_subject, sender_name, groupbuzz_link)
       
       body_text = prepare_body_text(raw_email_body)
 
@@ -47,9 +52,16 @@ module GroupBuzz
       }
     end
 
+    def is_digest_email?(email_body, subject)
+      return ((subject.include? GROUPBUZZ_DISCUSSION_FROM_SUBJECT)||
+              (email_body.include? GROUPBUZZ_RECENT_DISCUSSIONS_HEADER))
+    end
+
     def strip_groupbuzz_stuff(text)
       text = text.gsub(GROUPBUZZ_REPLY_HEADER_LINE, "")
       text = remove_embedded_images(text)
+  
+      # TODO - 20180911 might not need this anymore?
       #remove_embed_removed_marker(text)
     end
 
@@ -58,12 +70,10 @@ module GroupBuzz
     end
 
     def prepare_subject(text, sender, groupbuzz_link)
-#      sender_prefix = "#{sender} - "
-      sender_prefix = "" # move to attachments
       subject = text.gsub(@message_subject_prefix, '')
       return groupbuzz_link ?
-        "#{sender_prefix}<#{groupbuzz_link}|#{subject}>" :
-        "#{sender_prefix}#{subject}"  
+        "<#{groupbuzz_link}|#{subject}>" :
+        "#{subject}"  
     end
 
     def prepare_body_text(text)
@@ -105,12 +115,16 @@ module GroupBuzz
 
       return by_lines_truncated if by_lines_truncated_length <= max_text_length
 
+      # Return original text if less than max length. 
+      # This is after the by lines truncation to allow haiku-style emails to be truncated.
       return text if text.length <= max_text_length
 
+      # Truncate on word boundaries. Will currently break on punctuation like apostrophe though.
       # See https://stackoverflow.com/questions/8714045/truncate-a-string-without-cut-in-the-middle-of-a-word-in-rails
       text.match(/^.{0,#{max_text_length}}\b/)[0]
     end
 
+    # Truncate text based on number of distinct lines
     # This method cannot currently distinguish between a single line break and more than one line break (blank lines)
     def truncate_text_distinct_lines(text, max_distinct_lines)
       text_segments_truncated = []
@@ -130,6 +144,7 @@ module GroupBuzz
 
       text_only_segments = text_segments_truncated.reject{|segment| segment == LINE_BREAK_SEGMENT}
       text_only_segments_length = text_only_segments.inject(0){|sum, segment| sum + segment.length }
+
       return text_only_segments_length, text_segments_truncated.join('')
     end
 
@@ -163,8 +178,8 @@ module GroupBuzz
       }x, ''
     end
 
-    # Since the hacked-up remove_embedded_images leaves undesired spaces before and after, remove those spaces here
     # TODO - 20180911 might not need this anymore?
+    # Since the hacked-up remove_embedded_images leaves undesired spaces before and after, remove those spaces here
     def remove_embed_removed_marker(text)
       text.gsub(" #{MARKER_EMBED_REMOVED}  ", '')
     end

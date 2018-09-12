@@ -5,7 +5,7 @@ slack_username: 'GroupBuzz'
 slack_webhook: https://hooks.slack.com/services/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 
 message_subject_prefix: '[indyhall]'
 #message_truncate_length: 2000 # no truncate
-message_truncate_length: 249
+message_truncate_length: 239
 message_truncate_lines: 3 
 message_strip_new_lines: false
 # 30 characters/line (mobile)
