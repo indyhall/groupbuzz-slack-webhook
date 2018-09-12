@@ -84,6 +84,8 @@ module GroupBuzz
 
       # Remove all embedded images and the header (reply to)/footer(thread)
       body_text = strip_groupbuzz_stuff(body_text)
+      # Strip any newlines before that are left over from removing the GB reply header line
+      body_text.lstrip!
 
       body_text = Slack::Notifier::Util::LinkFormatter.format(body_text)
 
@@ -120,8 +122,10 @@ module GroupBuzz
       return text if text.length <= max_text_length
 
       # Truncate on word boundaries. Will currently break on punctuation like apostrophe though.
-      # See https://stackoverflow.com/questions/8714045/truncate-a-string-without-cut-in-the-middle-of-a-word-in-rails
-      text.match(/^.{0,#{max_text_length}}\b/)[0]
+
+      # Match whitespace https://stackoverflow.com/questions/159118/how-do-i-match-any-character-across-multiple-lines-in-a-regular-expression/159140
+      # Use dynamic variable in quantifier - https://stackoverflow.com/questions/6722145/how-can-i-interpolate-a-variable-in-a-ruby-regex
+      text.match(/(.|\n){1,#{max_text_length}}.*?(?:\b|$)/s)[0]
     end
 
     # Truncate text based on number of distinct lines
