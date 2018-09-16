@@ -1,22 +1,90 @@
-## groupbuzzslackrelay
+## groupbuzz-slack-webhook
 
-This project is a way to relay messages from Groupbuzz to Slack. Currently, Groupbuzz messages are relayed to Slack via the [Zapier](https://zapier.com/) automation platform. The templating capabilities that Zapier provides are limited.
+This project is a way to relay messages from GroupBuzz to Slack. Currently, GroupBuzz messages are relayed to Slack via the [Zapier](https://zapier.com/) automation platform. The [formatting](https://zapier.com/help/formatter/) capabilities that Zapier provides are limited when it comes to templating.
 
-### Proof-of-concept
+### Project description
 
-The proof of concept will provide an HTTP endpoint which will consume messages from Groupbuzz in the JSON format that is currently sent to Zapier. It will be configured with a Slack API key that will post the messages to a test Slack (https://creativetimemgmt.slack.com/).
+This project provides an HTTP endpoint which will consume messages from GroupBuzz in the JSON format that is currently sent by Zapier and post them to Slack in an abbreviated "preview" type format. 
 
 ### JSON post format
 
-```{"sender_name": "\"Sam Abrams\" via GroupBuzz", "email_body": "Please REPLY ABOVE THIS LINE to respond by email.\r\n\r\nWondering how to get your face on the tv screens around Indy Hall? Or do you see your pic and think \"oh jeez, that's so old!\"\r\n\r\nI'm here to help!\r\n\r\n**All next week** I'll have my camera around Indy Hall, ready to snap your member photo! It'll be quick, easy, and (believe it or not) you might have fun! I'll be inviting folks who don't have pics yet to get one, but if you would like a new photo, don't hesitate to ask- I'm happy to update yours!\r\n\r\nPluuuus if you like I'll send you your photo to use for linkedin, facebook, whatever (just credit me at [Sam Abrams Photography](https://www.samabramsphotography.com/) ;) )\r\n\r\nI'll see you next week- come see me whenever you're feeling photogenic!\r\n\r\n\r\n![giphy__281_29.gif](//s3.amazonaws.com/uploads.groupbuzz.io/production/uploads/3473/original/c5e8a744fe873dcfb4d70a7770db52f50f9b2348.gif?1526503036 'giphy__281_29.gif')\r\n\r\n\r\nFollow this topic if you would like to be notified of new posts in this discussion: http://indyhall.groupbuzz.io/topics/16997-next-week-is-member-photo-week/subscribe", "subject": "[indyhall] Next week is Member photo... WEEK?!"}```
+See the spec/examples directory for multiple examples of individual and digest message posts.
     
-In the example JSON post above, it appears that the text is formatted via Markdown. 
+### Message Processing Requirements
+
+Originally, before the project started, since Slack already understands Markdown, it was thought that this could be a very simple app that simply takes the input JSON and truncates it to a configurable length, removing new line (\n, \r) markers if needed. 
+
+During the implementation of the first version, a long list of processing tasks to be done before the message is posted to Slack in the categories of *removal*, *formatting*, or *extraction* was discovered. Most of these were addressed in the first version. Some of the processing tasks in different categories are done simultaneously.
+
+##### Removal
+
+1. From the subject, remove the prefix of "[indyhall]".
+2. From the email\_body, remove the header of "Please REPLY ABOVE THIS LINE to respond by email."
+3. From the email\_body, remove any line breaks before the first line of the message.
+4. From the email\_body, remove any embedded image links of this form:
+```![giphy__281_29.gif](//... 'giphy__281_29.gif')```. Usually, the URL host contains `uploads.groupbuzz.io` but that might not be able to be assumed always. All images links should be removed from the preview because we can control neither the height or width of the embedded image without resizing it.
+5. From the email\_body, remove the footer in the email body text of "Follow this topic if you would like to be notified of new posts in this discussion:"
+6. From the email\_body, remove any line breaks after the last line of the message that was before the footer.
+
+##### Extraction
+
+1. From the email\_body, extract the topic link from the link following the footer by removing the '/subscribe' part of the URL.
+2. From the sender\_name, extract the name by removing the quotes and the "via GroupBuzz" suffix. If the sender\_name happens to not be formatted that way, just pass it through.
+
+##### Formatting
+
+1. Change all Markdown links to Slack's [linking to URLs](https://api.slack.com/docs/message-formatting#linking_to_urls) format.
+2. Change all GB marked up bold `**text**` to single asterisk Markdown [bold](https://get.slack.help/hc/en-us/articles/202288908-how-can-i-add-formatting-to-my-messages-) `*text*`.
+
+#### Truncation
+
+1. Truncate on a character limit.
+2. Truncate on the first n lines of text, as identified by line breaks.
 
 ### Implementation
 
-Since Slack already understands Markdown, this could be a very simple app that simply takes the input JSON and truncates it to a configurable length, removing new line (\n, \r) markers if needed. It might be made a little more fancy with formatting.
+#### Version 1
 
-### Slack documentation/tools
+The first version used a single `GroupBuzz::SlackMessagePreparer` class that used a combination of normal String manipulation along with a set of regular expressions borrowed and adapted from various, cited sources to perform most of the required processing tasks, including attempting to not truncate 'in the middle' of a word. It wasn't the best implementation. However, it was good for a first pass and unit tested.
+
+During development and testing, a third rule emerged to complement the first rule of truncation: "The character limit should only include visible characters and not include characters incurred by Markdown formatting or metadata like a link URL or line break/tab characters." For example, ```[my site](http://www.mysite.com)``` has a visible character length of `my site` or 7 characters, not the 32! when all markdown and the URL is included.
+
+The first version was not able to adhere to the 3rd rule due to the increasing complexity of the regular expressions.
+
+In addition, an email message received during live testing had sloppy Markdown formatting. 
+
+1. ```[link] (https://www.mysite.com/```. A Markdown link with whitespace between the link label and the link URL: 
+ 
+
+2. ```[another link](https://www.mysite.com/...\r\n)```. A Markdown link with a ```\r\n``` sequence *inside* the link.   
+
+#### Version 2
+
+As a result of the parsing and formatting bugs, a decision has most likely already been made to completely scrap most of the regular expressions used for processing the message, in favor of using a real Markdown parser/formatter library called [redcarpet](https://github.com/vmg/redcarpet). A quick test showed that `redcarpet` successfully parsed and cleaned the two sloppy Markdown formatting examples automatically without issues.
+
+The implementation will follow a pipeline-style design.
+
+1. Process sender\_name to get the real sender name.
+2. Process subject to get the subject without the GB prefix.
+3. From the email\_body, remove the GB header and footer, storing the extracted topic link for later use.
+4. Parse the modified email\_body of step 3 with the `redcarpet` Markdown parser. Use a formatter subclass to remove all embedded images and output an email\_body (body\_for\_processing) without the header, footer, and any embedded images.
+5. From body\_for\_processing, use a formatter subclass to render all link labels to be uniquely identifiable by repeating sequences of a single unicode character (unicode aliases) and remove the link and link formatting. Call it special\_body. See below for explainer. 
+6. From special\_body, test to truncate by allowed line breaks. If the character count before the final allowed line break is less than the maximum characters allowed, return all the text prior to that line break as the body content, after replacing all of the unicode-aliased link label(s) back to the original Markdown link(s).
+7. From special\_body, test to truncate by maximum character count. If the character at the end is a non-whitespace character, backtrack until whitespace is encountered and then the end of another word (a word or link label). Replace all the unicode-aliased link labels back the original Markdown link(s).
+8. Format the links in the message to be Slack's format.
+9. Collect the subject, sender name, and body and post a message to Slack's incoming webhook.
+
+##### Step 5 explainer
+
+This formatter will change the label for a link to a repeated sequence of a unicode character that is unique for that particular label and also unique in the entire email\_body. To do this, we can increment an index to get a different unicode. During the formatting, 
+
+For example, embedded links like ```[link one](http://www.mysite.com) blah blah blah. This is [link two if you need it](http://www.mysite2.com).```  will be rendered to ```ÀÀÀÀÀÀÀÀ blah blah blah. This is ÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁ.``` is that if the ```Á``` character is found at the index of the character truncation limit (minus 1). 
+
+### Language choice
+
+Ruby was chosen, since I am most familiar with Ruby and it has [RSpec](http://rspec.info/). Trying to write this in Node.js, Serverless, etc. would delay the proof-of-concept because I am not at all comfortable or familiar with those.
+
+### Resources - Slack documentation/tools
 
 [Interactive message previewer](https://api.slack.com/docs/messages/builder?msg=%7B%22text%22%3A%22Hello%2C%20world%22%7D)
 
@@ -31,9 +99,6 @@ Since Slack already understands Markdown, this could be a very simple app that s
 
 ### Deployment
 
-The proof-of-concept will be deployed to Heroku's free tier. Since Heroku's free-tier [no longer](https://medium.com/@bantic/free-tls-with-letsencrypt-and-heroku-in-5-minutes-807361cca5d3) allows apps to use [Let's Encrypt's](https://letsencrypt.org/) free SSL certificates, deploying this with SSL will require deployment to a Heroku account at the [Hobby](https://www.heroku.com/pricing) level (or above) or another Cloud provider/host.
+Please see DEPLOYMENT.md
 
-### Language choice
-
-Ruby was chosen, since I am most familiar with Ruby and it has [RSpec](http://rspec.info/). Trying to write this in Node.js, Serverless, etc. would delay the proof-of-concept because I am not at all comfortable or familiar with those.
 
