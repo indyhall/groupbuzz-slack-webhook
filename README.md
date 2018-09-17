@@ -35,6 +35,7 @@ During the implementation of the first version, a long list of processing tasks 
 
 1. Change all Markdown links to Slack's [linking to URLs](https://api.slack.com/docs/message-formatting#linking_to_urls) format.
 2. Change all GB marked up bold `**text**` to single asterisk Markdown [bold](https://get.slack.help/hc/en-us/articles/202288908-how-can-i-add-formatting-to-my-messages-) `*text*`.
+3. Change &, <, > to Slack's [escaped characters](https://api.slack.com/docs/message-formatting#how_to_escape_characters) equivalents. TBD - This may or may not apply to URLs in links.
 
 #### Truncation
 
@@ -72,7 +73,8 @@ The implementation will follow a pipeline-style design.
 6. From special\_body, test to truncate by allowed line breaks. If the character count before the final allowed line break is less than the maximum characters allowed, return all the text prior to that line break as the body content, after replacing all of the unicode-aliased link label(s) back to the original Markdown link(s).
 7. From special\_body, test to truncate by maximum character count. If the character at the end is a non-whitespace character, backtrack until whitespace is encountered and then the end of another word (a word or link label). Replace all the unicode-aliased link labels back the original Markdown link(s).
 8. Format the links in the message to be Slack's format.
-9. Collect the subject, sender name, and body and post a message to Slack's incoming webhook.
+9. Format the &, <, > escaped characters to be Slack's format.
+10. Collect the subject, sender name, and body and post a message to Slack's incoming webhook.
 
 ##### Step 5 explainer
 

@@ -4,6 +4,7 @@ gem 'rake'
 gem 'sinatra', require: 'sinatra'
 gem 'slack-notifier'
 gem 'facets'
+gem 'redcarpet'
 
 group :test do
   gem 'pry'
