@@ -9,17 +9,21 @@ module GroupBuzz
     # Slack until it is converted to single asterisks.
     # Render demo: https://api.slack.com/docs/messages/builder?msg=%7B%22text%22%3A%22This%20is%20**strong%20bold%20formatted**%22%2C%22username%22%3A%22markdownbot%22%7D
     def format_double_bold(text)
-      redcarpet_markdown(GroupBuzz::ConvertDoubleAsterisksRenderer.new).render(text)
+      redcarpet_markdown.render(text)
+    end
+
+    def remove_images(text)
+      redcarpet_markdown.render(text)
     end
     
     private
 
-    def redcarpet_markdown(renderer = html_renderer)
+    def redcarpet_markdown(renderer = email_body_renderer)
       Redcarpet::Markdown.new(renderer, underline: true)
     end
 
-    def html_renderer
-      @render_html ||= Redcarpet::Render::HTML.new(render_options = {})
+    def email_body_renderer
+      @email_body_renderer ||= GroupBuzz::EmailBodyRenderer.new
     end
 
   end

@@ -2,8 +2,9 @@ require 'redcarpet'
 require 'redcarpet/render_strip'
 
 # TODO - this base class may need to change to a base class that has more HTML methods stubbed out
+# From the docs, nil return is 'stubbed out'
 module GroupBuzz
-  class ConvertDoubleAsterisksRenderer < Redcarpet::Render::HTML
+  class EmailBodyRenderer < Redcarpet::Render::HTML
 
     def double_emphasis(text)
       enclose_with('*', text)
@@ -13,13 +14,17 @@ module GroupBuzz
       enclose_with('*', text)
     end
 
-    # :underline: option must be passed to Redcarpet::Markdown initialization
-    def underline(text)
-      enclose_with('_', text)
+    def image(link, title, alt_text)
+      ""
     end
 
     def paragraph(text)
       text
+    end
+
+    # :underline: option must be passed to Redcarpet::Markdown initialization
+    def underline(text)
+      enclose_with('_', text)
     end
 
     private
