@@ -78,7 +78,7 @@ The implementation will follow a pipeline-style design.
 
 This formatter will change the label for a link to a repeated sequence of a unicode character that is unique for that particular label and also unique in the entire email\_body. To do this, we can increment an index to get a different unicode. During the formatting, 
 
-For example, embedded links like ```[link one](http://www.mysite.com) blah blah blah. This is [link two if you need it](http://www.mysite2.com).```  will be rendered to ```ÀÀÀÀÀÀÀÀ blah blah blah. This is ÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁ.``` is that if the ```Á``` character is found at the index of the character truncation limit (minus 1). 
+For example, embedded links like ```[link one](http://www.mysite.com) blah blah blah. This is [link two if you need it](http://www.mysite2.com).```  will be rendered to ```ÀÀÀÀÀÀÀÀ blah blah blah. This is ÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁ.``` The idea is that if the ```Á``` character is found at the index of the character truncation limit (minus 1), then we know it is is the second ```[link two if you need it]``` label. 
 
 ### Language choice
 
