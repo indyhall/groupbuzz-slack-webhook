@@ -1,10 +1,12 @@
-require 'redcarpet'
-require 'redcarpet/render_strip'
+require 'base_markdown_renderer'
 
-# TODO - this base class may need to change to a base class that has more HTML methods stubbed out
-# From the docs, nil return is 'stubbed out'
 module GroupBuzz
-  class EmailBodyRenderer < Redcarpet::Render::HTML
+  class EmailBodyRenderer < GroupBuzz::BaseMarkdownRenderer
+
+    def initialize(keep_image_alt_text: keep_image_alt_text)
+      super()
+      @keep_image_alt_text = keep_image_alt_text
+    end
 
     def double_emphasis(text)
       enclose_with('*', text)
@@ -15,7 +17,8 @@ module GroupBuzz
     end
 
     def image(link, title, alt_text)
-      ""
+      return @keep_image_alt_text ? 
+        "[#{alt_text}]" : ""
     end
 
     def paragraph(text)

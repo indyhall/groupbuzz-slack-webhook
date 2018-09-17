@@ -16,7 +16,7 @@ describe GroupBuzz::MarkdownProcessor do
   context "removal" do
 
     it "should remove all embedded uploads.groupbuzz.io image links" do
-      original = "BeforeTheEmbed![giphy__281_29.gif](//s3.amazonaws.com/uploads.groupbuzz.io/production/uploads/3473/original/c5e8a744fe873dcfb4d70a7770db52f50f9b2348.gif?1526503036 'giphy__281_29.gif')AfterTheEmbed"
+      original = "BeforeTheEmbed![title giphy__281_29.gif](//s3.amazonaws.com/uploads.groupbuzz.io/production/uploads/3473/original/c5e8a744fe873dcfb4d70a7770db52f50f9b2348.gif?1526503036 'giphy__281_29.gif')AfterTheEmbed"
       modified = markdown_processor.remove_images(original)
       expect(modified).to eq('BeforeTheEmbedAfterTheEmbed')
     end
@@ -27,13 +27,19 @@ describe GroupBuzz::MarkdownProcessor do
       expect(modified).to eq('BeforeTheEmbedAfterTheEmbed')
     end
 
+    it "should remove embedded image but keep alt text if keep_image_alt_text enabled" do
+      original = "BeforeTheEmbed![Image Alt Text Here](http://www.myimagehost.com/imagelink123 'giphy__281_29.gif')AfterTheEmbed"
+      modified = markdown_processor(keep_image_alt_text: true).remove_images(original)
+      expect(modified).to eq('BeforeTheEmbed[Image Alt Text Here]AfterTheEmbed')
+    end
+
   end
 
   # TODO - typical message with italics, strong bold, bold, embedded images, links to verify single-pass retains what
   # should be retained and changes what should be changed
 
-  def markdown_processor
-    @markdown_processor ||= GroupBuzz::MarkdownProcessor.new()
+  def markdown_processor(keep_image_alt_text: keep_image_alt_text = false)
+    @markdown_processor ||= GroupBuzz::MarkdownProcessor.new(keep_image_alt_text: keep_image_alt_text)
   end
 
 end
