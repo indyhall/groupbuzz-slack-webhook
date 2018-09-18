@@ -134,7 +134,7 @@ module GroupBuzz
 
       # Match whitespace https://stackoverflow.com/questions/159118/how-do-i-match-any-character-across-multiple-lines-in-a-regular-expression/159140
       # Use dynamic variable in quantifier - https://stackoverflow.com/questions/6722145/how-can-i-interpolate-a-variable-in-a-ruby-regex
-      text.match(/(.|\n){1,#{max_text_length}}.*?(?:\b|$)/s)[0]
+      text.match(/(.|\n){1,#{max_text_length}}.*?(?:\b|$)/i)[0]
     end
 
     # Truncate text based on number of distinct lines
