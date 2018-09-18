@@ -35,6 +35,37 @@ describe GroupBuzz::MarkdownProcessor do
 
   end
 
+  context "substitution" do
+
+    it "should substitute image links" do
+      image_alt_text = "Image Alt Text Here"
+      original_text = "![#{image_alt_text}](http://www.myimagehost.com/imagelink123 'giphy__281_29.gif')"
+      substitute_text(original_text, image_alt_text.length)
+    end
+
+    it "should substitute image links with space between content and the link and remove the spaces for the replacement" do
+      image_alt_text = "Image Alt Text Here"
+      content_part = "![#{image_alt_text}]"
+      link_part = "(http://www.myimagehost.com/imagelink123 'giphy__281_29.gif')"
+      original_text = "#{content_part}  #{link_part}"
+      substitute_text(original_text, image_alt_text.length, 
+        "#{content_part}#{link_part}")
+    end
+
+    it "should substitute links (sloppy)" do
+    end
+
+    def substitute_text(original_text, substitution_length, expected_retrieved_text = original_text)
+      substitution_tracker = GroupBuzz::SubstitutionTracker.new
+      modified_text = markdown_processor.substitute_markdown_enclosed_text(substitution_tracker, original_text)
+      current_character_key = substitution_tracker.current_character_key
+      expected_text = "#{current_character_key * substitution_length}"
+      expect(expected_text).to eq(modified_text)
+      expect(substitution_tracker.retrieve(current_character_key)).to eq(expected_retrieved_text)
+    end
+
+  end
+
   # TODO - typical message with italics, strong bold, bold, embedded images, links to verify single-pass retains what
   # should be retained and changes what should be changed
 

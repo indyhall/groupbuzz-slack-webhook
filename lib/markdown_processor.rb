@@ -1,7 +1,5 @@
 require 'redcarpet'
 
-# TODO - have single method to process Markdown if can do in single pass
-# TODO - make this abstract base class if cannot do in single pass
 module GroupBuzz
   class MarkdownProcessor
   
@@ -18,6 +16,12 @@ module GroupBuzz
 
     def remove_images(text)
       redcarpet_markdown.render(text)
+    end
+
+    def substitute_markdown_enclosed_text(substitution_tracker, text)
+      substitution_renderer = GroupBuzz::SubstitutionRenderer.new
+      substitution_renderer.substitution_tracker = substitution_tracker
+      redcarpet_markdown(substitution_renderer).render(text).lstrip.rstrip
     end
     
     private

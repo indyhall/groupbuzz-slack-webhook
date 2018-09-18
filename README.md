@@ -21,8 +21,8 @@ During the implementation of the first version, a long list of processing tasks 
 1. From the subject, remove the prefix of "[indyhall]".
 2. From the email\_body, remove the header of "Please REPLY ABOVE THIS LINE to respond by email."
 3. From the email\_body, remove any line breaks before the first line of the message.
-4. From the email\_body, remove any embedded image links of this form:
-```![giphy__281_29.gif](//... 'giphy__281_29.gif')```. Usually, the URL host contains `uploads.groupbuzz.io` but that might not be able to be assumed always. All images links should be removed from the preview because we can control neither the height or width of the embedded image without resizing it.
+4. From the email\_body, remove any embedded image links (keeping alt text if keep_image_alt_text enabled) of this form:
+```![giphy__281_29.gif](//... 'giphy__281_29.gif')```. Usually, the URL host contains `uploads.groupbuzz.io` but that might not be able to be assumed always. All images links should be removed from the preview because we can control neither the height or width of the embedded image without resizing it. 
 5. From the email\_body, remove the footer in the email body text of "Follow this topic if you would like to be notified of new posts in this discussion:"
 6. From the email\_body, remove any line breaks after the last line of the message that was before the footer.
 
@@ -68,7 +68,7 @@ The implementation will follow a pipeline-style design.
 1. Process sender\_name to get the real sender name.
 2. Process subject to get the subject without the GB prefix.
 3. From the email\_body, remove the GB header and footer, storing the extracted topic link for later use.
-4. Parse the modified email\_body of step 3 with the `redcarpet` Markdown parser. Use a formatter subclass to remove all embedded images and output an email\_body (body\_for\_processing) without the header, footer, and any embedded images.
+4. Parse the modified email\_body of step 3 with the `redcarpet` Markdown parser. Use a formatter subclass to remove all embedded images (keeping the image alt text if option enabled) and output an email\_body (body\_for\_processing) without the header, footer, and any embedded images (unless keep_image_alt_text).
 5. From body\_for\_processing, use a formatter subclass to render all link labels to be uniquely identifiable by repeating sequences of a single unicode character (unicode aliases) and remove the link and link formatting. Call it special\_body. See below for explainer. 
 6. From special\_body, test to truncate by allowed line breaks. If the character count before the final allowed line break is less than the maximum characters allowed, return all the text prior to that line break as the body content, after replacing all of the unicode-aliased link label(s) back to the original Markdown link(s).
 7. From special\_body, test to truncate by maximum character count. If the character at the end is a non-whitespace character, backtrack until whitespace is encountered and then the end of another word (a word or link label). Replace all the unicode-aliased link labels back the original Markdown link(s).
