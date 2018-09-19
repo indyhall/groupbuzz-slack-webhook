@@ -1,4 +1,4 @@
-require 'message_constants'
+require_relative 'message_constants'
 
 module GroupBuzz
   class SubjectProcessor

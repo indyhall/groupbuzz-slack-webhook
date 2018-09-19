@@ -1,4 +1,4 @@
-require 'base_markdown_renderer'
+require_relative 'base_markdown_renderer'
 
 module GroupBuzz
   class EmailBodyRenderer < GroupBuzz::BaseMarkdownRenderer

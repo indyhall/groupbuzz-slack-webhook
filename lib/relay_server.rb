@@ -12,18 +12,17 @@ class RelayServer < Sinatra::Base
     GroupBuzz::SettingsHolder.settings = YAML::load_file(File.join(__dir__, '../config/settings.yml')).symbolize_keys.clone
   end
 
-
   get '/hello-world' do
     "Hello World!"
   end
 
   post '/post-to-slack' do
-    message_post = JSON.parse(request.body.read)
+    text = request.body.read
+    halt 500 unless text.strip.length > 0
+    
+    message_post = JSON.parse(text)
     posted = slack_poster.post(message_post)
     {'sent_status' => posted}.to_json
-  end
-
-  post '/slack-conversion-tester' do
   end
 
   private

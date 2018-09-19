@@ -6,11 +6,18 @@ describe RelayServer do
     @app ||= RelayServer
   end
   
-  describe "GET '/hello-world'" do
-    it "should be successful" do
+  describe "RelayServer" do
+
+    it "should be successful for ping url" do
       get '/hello-world'
       expect(last_response).to be_ok
     end
+
+    it "should fail on empty message post" do
+      post '/post-to-slack'
+      expect(last_response).to_not be_ok
+    end
+
   end
   
 end

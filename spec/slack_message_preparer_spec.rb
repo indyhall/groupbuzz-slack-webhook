@@ -136,6 +136,15 @@ describe GroupBuzz::SlackMessagePreparer do
         "#{original[0, DEFAULT_TRUNCATE_LENGTH+1]}…")      
     end
 
+    # This will produce the following error if final regexp was still using /s and not /i
+    # Encoding::CompatibilityError:
+    #   incompatible encoding regexp match (Windows-31J regexp with UTF-8 string)
+    it 'should foo' do
+      original = ("Ĳ" * DEFAULT_TRUNCATE_LENGTH).force_encoding('utf-8')
+      check_email_body(prepare_with_email_body(email_body: original),
+        "#{original[0, DEFAULT_TRUNCATE_LENGTH+1]}…")
+    end
+
     # punting on this... too difficult
     xit 'should optimally linebreak on multi-line, blank spaced' do
       original = "Please REPLY ABOVE THIS LINE to respond by email.\r\n\r\nWondering how to get your face on the tv screens around Indy Hall? Or do you see your pic and think \"oh jeez, that's so old!\"\r\n\r\nI'm here to help!\r\n\r\n**All next week** I'll have my camera around Indy Hall, ready to snap your member photo! It'll be quick, easy, and (believe it or not) you might have fun! I'll be inviting folks who don't have pics yet to get one, but if you would like a new photo, don't hesitate to ask- I'm happy to update yours!\r\n\r\nPluuuus if you like I'll send you your photo to use for linkedin, facebook, whatever (just credit me at [Sam Abrams Photography](https://www.samabramsphotography.com/) ;) )\r\n\r\nI'll see you next week- come see me whenever you're feeling photogenic!\r\n\r\n\r\n![giphy__281_29.gif](//s3.amazonaws.com/uploads.groupbuzz.io/production/uploads/3473/original/c5e8a744fe873dcfb4d70a7770db52f50f9b2348.gif?1526503036 'giphy__281_29.gif')\r\n\r\n\r\nFollow this topic if you would like to be notified of new posts in this discussion: http://indyhall.groupbuzz.io/topics/16997-next-week-is-member-photo-week/subscribe"
