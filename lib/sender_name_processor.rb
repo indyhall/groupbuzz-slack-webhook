@@ -1,3 +1,5 @@
+require_relative 'message_constants'
+
 module GroupBuzz
   class SenderNameProcessor
     include GroupBuzz::MessageConstants
