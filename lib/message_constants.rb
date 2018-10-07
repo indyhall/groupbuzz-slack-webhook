@@ -1,6 +1,8 @@
 module GroupBuzz
   module MessageConstants
   
+    GROUPBUZZ_DISCUSSION_FROM_SUBJECT = "Discussion from"
+    GROUPBUZZ_RECENT_DISCUSSIONS_HEADER = "Recent Discussions"
     GROUPBUZZ_REPLY_HEADER_LINE = "Please REPLY ABOVE THIS LINE to respond by email."
     GROUPBUZZ_SENDER_VIA_SUFFIX = " via GroupBuzz"
     GROUPBUZZ_SUBSCRIBE_URL_PART = "subscribe"

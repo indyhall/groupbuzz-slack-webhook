@@ -11,18 +11,25 @@ module GroupBuzz
       @substitution_characters = []
     end
 
-    def retrieve(character)
-      @substitutions_by_character[character]
+    def substituted_character_index(character)
+      @substitution_characters.index(character)
     end
 
-    def store(character, original_text)
-      @substitutions_by_character[character] = original_text
+    def retrieve(character, key = :original_text)
+      @substitutions_by_character[character][key]
+    end
+
+    def store(character, markdown_type, original_text, non_hidden_text)
+      @substitutions_by_character[character] = 
+        {
+          markdown_type: markdown_type, original_text: original_text, non_hidden_text: non_hidden_text
+        }
       return character
     end
 
-    def substitute(original_text, substitute_length)
+    def substitute(markdown_type, original_text, non_hidden_text, substitute_length)
       key = new_character_key
-      store(key, original_text)
+      store(key, markdown_type, original_text, non_hidden_text)
       key * substitute_length
     end
 

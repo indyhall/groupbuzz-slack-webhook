@@ -3,7 +3,7 @@ require_relative 'base_markdown_renderer'
 module GroupBuzz
   class EmailBodyRenderer < GroupBuzz::BaseMarkdownRenderer
 
-    def initialize(keep_image_alt_text: keep_image_alt_text)
+    def initialize(keep_image_alt_text: keep_image_alt_text = false)
       super()
       @keep_image_alt_text = keep_image_alt_text
     end

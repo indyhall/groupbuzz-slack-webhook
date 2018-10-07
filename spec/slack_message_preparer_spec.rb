@@ -1,14 +1,11 @@
 require 'spec_helper'
+require_relative 'support/data_helper'
 
 describe GroupBuzz::SlackMessagePreparer do
 
-  DEFAULT_MESSAGE_SUBJECT_PREFIX = '[indyhall]' 
-  DEFAULT_SUBJECT = 'This is a subject'
-  DEFAULT_SENDER_NAME = "\"Jane Doe\" via GroupBuzz"
-  DEFAULT_EMAIL_BODY = 'This is the email body.'
-  DEFAULT_STRIP_NEW_LINES = false
-  DEFAULT_TRUNCATE_LENGTH = 239
-  DEFAULT_TRUNCATE_LINES = 3
+  RSpec.configure do |c|
+    c.include DataHelper
+  end
 
   context "formatting of email body" do
 
@@ -133,16 +130,16 @@ describe GroupBuzz::SlackMessagePreparer do
     it 'should truncate based on length if max distinct lines is not exceeded' do
       original = long_text_sample
       check_email_body(prepare_with_email_body(email_body: original),
-        "#{original[0, DEFAULT_TRUNCATE_LENGTH+1]}…")      
+        "#{original[0, DataHelper::DEFAULT_TRUNCATE_LENGTH+1]}…")      
     end
 
     # This will produce the following error if final regexp was still using /s and not /i
     # Encoding::CompatibilityError:
     #   incompatible encoding regexp match (Windows-31J regexp with UTF-8 string)
     it 'should foo' do
-      original = ("Ĳ" * DEFAULT_TRUNCATE_LENGTH).force_encoding('utf-8')
+      original = ("Ĳ" * DataHelper::DEFAULT_TRUNCATE_LENGTH).force_encoding('utf-8')
       check_email_body(prepare_with_email_body(email_body: original),
-        "#{original[0, DEFAULT_TRUNCATE_LENGTH+1]}…")
+        "#{original[0, DataHelper::DEFAULT_TRUNCATE_LENGTH+1]}…")
     end
 
     # punting on this... too difficult
@@ -155,12 +152,12 @@ describe GroupBuzz::SlackMessagePreparer do
   end
 
   def prepare_with_email_body(
-    email_body: email_body = DEFAULT_EMAIL_BODY, 
-    email_subject: email_subject = DEFAULT_SUBJECT,
-    email_sender_name: email_sender_name = DEFAULT_SENDER_NAME,
+    email_body: email_body = DataHelper::DEFAULT_EMAIL_BODY, 
+    email_subject: email_subject = DataHelper::DEFAULT_SUBJECT,
+    email_sender_name: email_sender_name = DataHelper::DEFAULT_SENDER_NAME,
     strip_new_lines: strip_new_lines = false,
-    truncate_lines: truncate_lines = DEFAULT_TRUNCATE_LINES,
-    truncate_length: truncate_length = DEFAULT_TRUNCATE_LENGTH)
+    truncate_lines: truncate_lines = DataHelper::DEFAULT_TRUNCATE_LINES,
+    truncate_length: truncate_length = DataHelper::DEFAULT_TRUNCATE_LENGTH)
     
     postable, slack_message = prepare_with_email_body_direct(
       email_body: email_body, email_subject: email_subject, email_sender_name: email_sender_name,
@@ -169,12 +166,12 @@ describe GroupBuzz::SlackMessagePreparer do
   end
 
   def prepare_with_email_body_direct(
-    email_subject: email_subject = DEFAULT_SUBJECT,
-    email_body: email_body = DEFAULT_EMAIL_BODY, 
-    email_sender_name: email_sender_name = DEFAULT_SENDER_NAME,
-    strip_new_lines: strip_new_lines = DEFAULT_STRIP_NEW_LINES, 
-    truncate_lines: truncate_lines = DEFAULT_TRUNCATE_LINES, 
-    truncate_length: truncate_length = DEFAULT_TRUNCATE_LENGTH)
+    email_subject: email_subject = DataHelper::DEFAULT_SUBJECT,
+    email_body: email_body = DataHelper::DEFAULT_EMAIL_BODY, 
+    email_sender_name: email_sender_name = DataHelper::DEFAULT_SENDER_NAME,
+    strip_new_lines: strip_new_lines = DataHelper::DEFAULT_STRIP_NEW_LINES, 
+    truncate_lines: truncate_lines = DataHelper::DEFAULT_TRUNCATE_LINES, 
+    truncate_length: truncate_length = DataHelper::DEFAULT_TRUNCATE_LENGTH)
 
     message_preparer(strip_new_lines: strip_new_lines, truncate_length: truncate_length, truncate_lines: truncate_lines)
       .prepare(test_message(email_subject: email_subject, email_body: email_body, email_sender_name: email_sender_name))
@@ -196,8 +193,8 @@ describe GroupBuzz::SlackMessagePreparer do
     expect(slack_message[:attachments].first[key]).to eq(expected)
   end
 
-  def test_message(email_body: email_body = DEFAULT_EMAIL_BODY,
-    email_sender_name: email_sender_name = DEFAULT_SENDER_NAME,
+  def test_message(email_body: email_body = DataHelper::DEFAULT_EMAIL_BODY,
+    email_sender_name: email_sender_name = DataHelper::DEFAULT_SENDER_NAME,
     email_subject: subject)
     {'email_body' => email_body,
      'sender_name' => email_sender_name,
@@ -223,10 +220,10 @@ describe GroupBuzz::SlackMessagePreparer do
   end    
 
   def message_preparer(
-    strip_new_lines: strip_new_lines,
-    truncate_length: truncate_length,
-    truncate_lines: truncate_lines)
-    ENV['GROUPBUZZ_RELAY_SLACK_MESSAGE_SUBJECT_PREFIX'] = DEFAULT_MESSAGE_SUBJECT_PREFIX
+    strip_new_lines: strip_new_lines = true,
+    truncate_length: truncate_length = DataHelper::DEFAULT_TRUNCATE_LENGTH,
+    truncate_lines: truncate_lines = DataHelper::DEFAULT_TRUNCATE_LINES)
+    ENV['GROUPBUZZ_RELAY_SLACK_MESSAGE_SUBJECT_PREFIX'] = DataHelper::DEFAULT_MESSAGE_SUBJECT_PREFIX
     message_preparer = GroupBuzz::SlackMessagePreparer.new
 
     message_preparer.original_message_debug_logging = false

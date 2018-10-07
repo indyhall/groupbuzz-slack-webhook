@@ -33,14 +33,21 @@ module GroupBuzz
 
     # Other methods where we don't return only a specific argument
     def link(link, title, content)
-      substitute = @substitution_tracker.substitute("[#{content}](#{link})", content.length)
-      substitute
+      @substitution_tracker.substitute(
+        :link, 
+        GroupBuzz::MarkdownHelper.link(link, nil, content), 
+        content, 
+        content.length)
     end
 
     def image(link, title, content)
       title_holder = title ?
         " '#{title}'" : ""
-      @substitution_tracker.substitute("![#{content}](#{link}#{title_holder})", content.length)
+      @substitution_tracker.substitute(
+        :image, 
+        GroupBuzz::MarkdownHelper.image(link, title_holder, content), 
+        content, 
+        content.length)
     end
 
     def paragraph(text)
@@ -48,11 +55,19 @@ module GroupBuzz
     end
 
     def underline(text)
-      @substitution_tracker.substitute("_#{text}_", text.length)
+      @substitution_tracker.substitute(
+        :underline, 
+        GroupBuzz::MarkdownHelper.underline(text), 
+        text, 
+        text.length)
     end
 
     def emphasis(text)
-      @substitution_tracker.substitute("*#{text}*", text.length)
+      @substitution_tracker.substitute(
+        :emphasis, 
+        GroupBuzz::MarkdownHelper.emphasis(text), 
+        text, 
+        text.length)
     end
 
   end
