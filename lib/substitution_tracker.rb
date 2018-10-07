@@ -3,9 +3,12 @@ module GroupBuzz
   
     STARTING_CHARACTER_INDEX = 192
 
+    attr_accessor :substitution_characters
+
     def initialize
       @substitutions_by_character = {}
       @character_index = STARTING_CHARACTER_INDEX
+      @substitution_characters = []
     end
 
     def retrieve(character)
@@ -31,7 +34,9 @@ module GroupBuzz
 
     def new_character_key
       @character_index += 1
-      current_character_key
+      key = current_character_key
+      substitution_characters << key
+      key
     end
 
   end

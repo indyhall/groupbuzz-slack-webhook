@@ -21,13 +21,17 @@ module GroupBuzz
     def substitute_markdown_enclosed_text(substitution_tracker, text)
       substitution_renderer = GroupBuzz::SubstitutionRenderer.new
       substitution_renderer.substitution_tracker = substitution_tracker
-      redcarpet_markdown(substitution_renderer).render(text).lstrip.rstrip
+      substituted = redcarpet_markdown(substitution_renderer).render(text).lstrip.rstrip
+      substituted
     end
     
     private
 
     def redcarpet_markdown(renderer = email_body_renderer)
-      Redcarpet::Markdown.new(renderer, underline: true)
+      extensions = {
+        underline: true
+      }
+      Redcarpet::Markdown.new(renderer, extensions)
     end
 
     def email_body_renderer

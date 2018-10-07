@@ -8,6 +8,7 @@ module GroupBuzz
     attr_accessor :substitution_tracker
 
     # Methods where the first argument is the text content
+    # :underline, :link, :image removed from below
     [
       # block-level calls
       :block_code, :block_quote,
@@ -15,7 +16,7 @@ module GroupBuzz
 
       # span-level calls
       :autolink, :codespan, :double_emphasis,
-      :emphasis, :underline, :raw_html,
+      :emphasis, :raw_html,
       :triple_emphasis, :strikethrough,
       :superscript, :highlight, :quote,
 
@@ -44,6 +45,14 @@ module GroupBuzz
 
     def paragraph(text)
       text + "\r\n\r\n"
+    end
+
+    def underline(text)
+      @substitution_tracker.substitute("_#{text}_", text.length)
+    end
+
+    def emphasis(text)
+      @substitution_tracker.substitute("*#{text}*", text.length)
     end
 
   end
